@@ -38,6 +38,12 @@ def _append_project_element(root: ET.Element, project_url: Union[Project, str], 
     name_e = ET.SubElement(root, Tag.NAME)
     name_e.text = name
 
+def _append_project_file_name(root: ET.Element, project_url: Union[Project, str], name):
+    url = ET.SubElement(root, Tag.PROJECT_URL)
+    url.text = str(project_url)
+    name_e = ET.SubElement(root, Tag.FILENAME)
+    name_e.text = name
+
 
 class RPCClient:
     """
@@ -165,6 +171,29 @@ class RPCClient:
         """
         req = ET.Element(Tag.SUSPEND_RESULT)
         _append_project_element(req, project_url, name)
+        return await self._request_auth(req)
+    
+    async def retry_file_transfer(self, project_url, name):
+        """
+        retry_file_transfer a task
+        """
+        req = ET.Element(Tag.RETRY_FILE_TRANSFER)
+        _append_project_file_name(req, project_url, name)
+        return await self._request_auth(req)
+    
+    async def project_update(self, project_url):
+        req = ET.Element(Tag.PROJECT_UPDATE)
+        _append_project_element(req, project_url, "")
+        return await self._request_auth(req)
+    
+    async def project_suspend(self, project_url):
+        req = ET.Element(Tag.PROJECT_SUSPEND)
+        _append_project_element(req, project_url, "")
+        return await self._request_auth(req)
+    
+    async def project_resume(self, project_url):
+        req = ET.Element(Tag.PROJECT_RESUME)
+        _append_project_element(req, project_url, "")
         return await self._request_auth(req)
 
     async def resume_result(self, project_url, name):
