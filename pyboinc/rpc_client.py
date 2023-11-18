@@ -145,7 +145,7 @@ class RPCClient:
 
     async def get_project_status(self):
         req = ET.Element(Tag.GET_PROJECT_STATUS)
-        return [Project(**parse_generic(c)) for c in await self._request(req)]
+        return parse_generic(await self._request(req))
 
     async def get_results(self, active_only=False):
         req = ET.Element(Tag.GET_RESULTS)
@@ -193,6 +193,16 @@ class RPCClient:
     
     async def project_resume(self, project_url):
         req = ET.Element(Tag.PROJECT_RESUME)
+        _append_project_element(req, project_url, "")
+        return await self._request_auth(req)
+    
+    async def project_allow_more_work(self, project_url):
+        req = ET.Element(Tag.PROJECT_ALLOWMOREWORK)
+        _append_project_element(req, project_url, "")
+        return await self._request_auth(req)
+    
+    async def project_no_more_work(self, project_url):
+        req = ET.Element(Tag.PROJECT_NOMOREWORK)
         _append_project_element(req, project_url, "")
         return await self._request_auth(req)
 
