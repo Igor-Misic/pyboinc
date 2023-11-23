@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import asyncio
+import datetime
 
 from pyboinc import init_rpc_client
 
@@ -70,7 +71,8 @@ async def main():
                     print ("Einstein not suspended")
 
         results = await rpc_client_1.get_results()
-        gpu_grid_tasks = 0
+        gpu_grid_running_tasks = 0
+        gpu_grid_total_tasks = 0
         wcg_tasks = 0
         rosseta_tasks = 0
         univers_tasks = 0
@@ -82,7 +84,13 @@ async def main():
                 and result["project_url"] == "https://www.gpugrid.net/"
                 and result["state"] == RUNNING_STATE
             ):
-                gpu_grid_tasks = 1 + gpu_grid_tasks
+                gpu_grid_running_tasks = 1 + gpu_grid_running_tasks
+
+            if (
+                result["project_url"] == "https://www.gpugrid.net/"
+            ):
+                gpu_grid_total_tasks = 1 + gpu_grid_total_tasks
+
             if result["project_url"] == "http://www.worldcommunitygrid.org/":
                 wcg_tasks = 1 + wcg_tasks
 
@@ -95,7 +103,8 @@ async def main():
             if result["project_url"] == "https://einstein.phys.uwm.edu/":
                 einstein_tasks = 1 + einstein_tasks
 
-        print("number of GPUGRID tasks:" + str(gpu_grid_tasks))
+        print("number of GPUGRID running tasks:" + str(gpu_grid_running_tasks))
+        print("number of GPUGRID total tasks:" + str(gpu_grid_total_tasks))
         print("number of WCG tasks:" + str(wcg_tasks))
         print("number of Rosseta tasks:" + str(rosseta_tasks))
         print("number of Univers tasks:" + str(univers_tasks))
@@ -113,17 +122,27 @@ async def main():
             )
 
 
-        if gpu_grid_tasks < 2:
+        now = datetime.datetime.now()
+        not_good_time = (now.hour > 0) and (now.hour < 8) and (now.weekday() != 5) and (now.weekday() != 6)
+
+        print ("hour: " +  str(now.hour) + " weekday: " + str(now.weekday()))
+
+        if (not_good_time):
+            print ("Not good time for new GRC tasks")
+        else:
+            print ("Good time for new GRC tasks")
+
+        if gpu_grid_total_tasks < 2 and (False == not_good_time):
             results = await rpc_client_1.project_allow_more_work(
                 "https://www.gpugrid.net/"
             )
 
-        if gpu_grid_tasks >= 2:
+        if gpu_grid_total_tasks >= 2:
             results = await rpc_client_1.project_no_more_work(
                 "https://www.gpugrid.net/"
             )
 
-        if einstein_tasks < 5 and gpu_grid_tasks == 0:
+        if einstein_tasks < 5 and gpu_grid_total_tasks == 0:
             results = await rpc_client_1.project_allow_more_work(
                 "https://einstein.phys.uwm.edu/"
             )
@@ -133,7 +152,7 @@ async def main():
                 "https://einstein.phys.uwm.edu/"
             )
 
-        if gpu_grid_tasks > 0:
+        if gpu_grid_running_tasks > 0:
 
             if DISABLE_EINSTEIN and einstein_suspended_via_gui == False:
                 results = await rpc_client_1.project_suspend(
